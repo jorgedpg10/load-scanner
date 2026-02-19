@@ -15,19 +15,13 @@ import threading
 from termcolor import colored
 from importlib import reload
 
-print (""" ______             ______             
-|  ___ \       _   (____  \       _    
-| |   | | ____| |_  ____)  ) ___ | |_  
-| |   | |/ _  )  _)|  __  ( / _ \|  _) 
-| |   | ( (/ /| |__| |__)  ) |_| | |__ 
-|_|   |_|\____)\___)______/ \___/ \___)1.0 from https://github.com/skavngr
-                                       """)
+print("arrancamos")
 
 
 def config():
-	import netbot_config
-	netbot_config = reload(netbot_config)
-	return netbot_config.ATTACK_STATUS
+	import config
+	config = reload(config)
+	return config.ATTACK_STATUS
 	 
 
 def threaded(c):
