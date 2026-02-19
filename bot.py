@@ -49,6 +49,26 @@ class lauchLoad:
 						os.killpg(os.getpgid(pro.pid), signal.SIGTERM)
 						run = 0
 						break
+
+def connect_with_retry(host, port):
+    max_retries = 5
+    retry_delay = 15
+    
+    for attempt in range(max_retries):
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+            s.settimeout(30)  # Timeout de 30 segundos
+            s.connect((host, port))
+            print(f"✅ Conectado en intento {attempt + 1}")
+            return s
+        except Exception as e:
+            print(f"❌ Intento {attempt + 1} falló: {e}")
+            if attempt < max_retries - 1:
+                time.sleep(retry_delay)
+    
+    print("No se pudo conectar después de múltiples intentos")
+    return None
 				
 
 
@@ -66,7 +86,9 @@ def Main():
 	host = '0.tcp.sa.ngrok.io' #server
 	port = 17449 #server
 
-	s = socket.socket(socket.AF_INET,socket.SOCK_STREAM) # Establishing a TCP Connection
+	s = connect_with_retry(host,port)
+
+		#s = socket.socket(socket.AF_INET,socket.SOCK_STREAM) # Establishing a TCP Connection
 	try:
 		s.connect((host,port)) # Connect to the  Server
 		message = "HEARTBEAT" # Sends Alive Pings to Server
