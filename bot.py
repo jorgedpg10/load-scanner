@@ -64,7 +64,7 @@ def Main():
 
 
 	host = '0.tcp.sa.ngrok.io' #server
-	port = 12514 #server
+	port = 17449 #server
 
 	s = socket.socket(socket.AF_INET,socket.SOCK_STREAM) # Establishing a TCP Connection
 	try:
