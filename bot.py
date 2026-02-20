@@ -12,7 +12,6 @@ import socket
 import time
 import threading
 import time
-#import requests
 import os
 import urllib.request
 import subprocess
@@ -97,61 +96,64 @@ def Main():
     
     # ✅ Si llegamos aquí, ya estamos conectados
 	message = "HEARTBEAT"
+
+	try:
+		while True:
+			try:
+				s.send(message.encode())	
+				time.sleep(5)
+			except Exception as e:
+				print(f"❌ Error enviando mensaje: {e}")
+				break # Salir del while y reconectar
 		
-	while True:
+			data = s.recv(1024)
 
-		# message sent to server
-		try:
-			s.send(message.encode())	
+			print('Response:',str(data.decode()))
 
-		except:
-			Main()
-		# message received from server
-		data = s.recv(1024)
-
-		print('Response:',str(data.decode()))
-
-		data = str(data.decode())
-		data = data.split('_')
-		print('server Response: ', data)  #check list empty code
-		if len(data) > 1:
-			
-			runStatus = data[2]
-		else:
-			runStatus = "OFFLINE"
-			
-
-		print('Response: ', runStatus)
-		
-		if runStatus == "LAUNCH":
-			if statusSet == 0:
-				# start a new thread and starts a new process
-				statusSet = 1
-				c = lauchLoad()
-				t = threading.Thread(target = c.run, args =(data, ))
-				t.start()
-				
+			data = str(data.decode())
+			data = data.split('_')
+			print('server Response: ', data)  #check list empty code
+			if len(data) > 1:
+				runStatus = data[2]
 			else:
-				time.sleep(15)
-				if t.is_alive():
-					print('Connecting...')
-			#else: 
-			continue
-		elif runStatus == "HALT":
-			statusSet = 0
-			time.sleep(30)
-			continue
-		elif runStatus == "HOLD":
-			statusSet = 0
-			print('Waiting for Instructions from server. Retrying in 30 seconds...')
-			time.sleep(30)
-		else:
-			statusSet = 0
-			print('Server Offline. Retrying in 30 seconds...')
-			updated = 0
-			time.sleep(30)
-	# close the connection
-	s.close()
+				runStatus = "OFFLINE"
+			
+
+			print('Response: ', runStatus)
+		
+			if runStatus == "LAUNCH":
+				if statusSet == 0:
+					# start a new thread and starts a new process
+					statusSet = 1
+					c = lauchLoad()
+					t = threading.Thread(target = c.run, args =(data, ))
+					t.start()
+					
+				else:
+					time.sleep(15)
+					if t.is_alive():
+						print('Connecting...')
+				#else: 
+				continue
+			elif runStatus == "HALT":
+				statusSet = 0
+				time.sleep(30)
+				continue
+			elif runStatus == "HOLD":
+				statusSet = 0
+				print('Waiting for Instructions from server. Retrying in 30 seconds...')
+				time.sleep(30)
+			else:
+				statusSet = 0
+				print('Server Offline. Retrying in 30 seconds...')
+				updated = 0
+				time.sleep(30)
+	finally:
+		s.close()  # ← Ahora cierra DESPUÉS del while
+		print("🔌 Conexión cerrada. Reconectando...")
+		time.sleep(5)
+		Main() 
+	
 
 if __name__ == '__main__':
 	Main()
