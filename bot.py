@@ -84,21 +84,19 @@ def Main():
 
 
 	host = '0.tcp.sa.ngrok.io' #server
-	port = 17449 #server
+	port = 15170 #server
 
 	s = connect_with_retry(host,port)
 
-		#s = socket.socket(socket.AF_INET,socket.SOCK_STREAM) # Establishing a TCP Connection
-	try:
-		s.connect((host,port)) # Connect to the  Server
-		message = "HEARTBEAT" # Sends Alive Pings to Server
-		
-	except Exception as e:
-		print(f"❌ Error: {e}")
-		print(" Server not online. Retrying every 15 seconds...")
-		updated = 0
+	# ✅ Verificar si la conexión fue exitosa
+	if s is None:
+		print("❌ No se pudo establecer conexión. Reintentando...")
 		time.sleep(15)
 		Main()
+		return
+    
+    # ✅ Si llegamos aquí, ya estamos conectados
+	message = "HEARTBEAT"
 		
 	while True:
 
