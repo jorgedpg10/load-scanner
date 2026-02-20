@@ -119,7 +119,7 @@ def Main():
 
 			data = str(data.decode())
 			data = data.split('_')
-			print('server Response: ', data)  # ['167.172.229.50', '3000', 'LAUNCH', 'HTTPFLOOD', '0']
+			#print('server Response: ', data)  # ['167.172.229.50', '3000', 'LAUNCH', 'HTTPFLOOD', '0']
 			if len(data) > 1:
 				runStatus = data[2]
 			else:
