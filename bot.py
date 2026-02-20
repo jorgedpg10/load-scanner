@@ -34,7 +34,7 @@ class lauchLoad:
 			while self._running and statusSet:
 				receiving_url = 'http://'+n[0]+':'+n[1]+'/'
 				try:
-					u = urllib.request.urlopen(receiving_url, timeout=10).read()
+					urllib.request.urlopen(receiving_url, timeout=100).read()
 				except urllib.error.URLError as e:
 					print(f"❌ Error conectando a {receiving_url}: {e}")
 					return  # Salir del thread
