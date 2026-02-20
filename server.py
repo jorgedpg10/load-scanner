@@ -25,36 +25,43 @@ def config():
 	 
 
 def threaded(c):
-	while True:
-		data = c.recv(1024)
-		if not data:
-			global connected
-			connected = connected - 1;
-			print('\x1b[0;30;41m' + ' client went Offline! ' + '\x1b[0m','Disconnected from server :', c.getpeername()[0], ':', c.getpeername()[1], '\x1b[6;30;43m' + ' Total clients Connected:', connected,  '\x1b[0m')
-			break
-		c.send(config().encode())
-
-	#c.close() #No issues commented earlier.
+    try:
+        while True:
+            data = c.recv(1024)
+            if not data:
+                break
+            c.send(config().encode())
+    except Exception as e:
+        print(f"Error en thread: {e}")
+    finally:
+        global connected
+        connected -= 1
+        try:
+            print('\x1b[0;30;41m' + ' client went Offline! ' + '\x1b[0m','Disconnected from server :', c.getpeername()[0], ':', c.getpeername()[1], '\x1b[6;30;43m' + ' Total clients Connected:', connected,  '\x1b[0m')
+        except:
+            pass
+        c.close()  
 
 
 def Main():
-	host = "0.0.0.0"
-	port = 5555
-	global connected
-	connected = 0
+    host = "0.0.0.0"
+    port = 5555
+    global connected
+    connected = 0
 
-	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	s.bind((host, port))
-	s.listen(50)
-	while True:
-
-		c, addr = s.accept()
-		connected = connected + 1;
-		print('\x1b[0;30;42m' + ' client is now Online! ' + '\x1b[0m','Connected to server :', addr[0], ':', addr[1], '\x1b[6;30;43m' + ' Total clients Connected:', connected,  '\x1b[0m')
-
-		threading.Thread(target=threaded, args=(c,)).start()
-	
-	#s.close() #No issues uncommented earlier.
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # ← AÑADE ESTA LÍNEA
+    s.bind((host, port))
+    s.listen(50)
+    
+    try:
+        while True:
+            c, addr = s.accept()
+            connected = connected + 1
+            print('\x1b[0;30;42m' + ' client is now Online! ' + '\x1b[0m','Connected to server :', addr[0], ':', addr[1], '\x1b[6;30;43m' + ' Total clients Connected:', connected,  '\x1b[0m')
+            threading.Thread(target=threaded, args=(c,)).start()
+    finally:
+        s.close()
 
 
 if __name__ == '__main__':
